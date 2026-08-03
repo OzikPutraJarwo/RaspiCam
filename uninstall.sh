@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
-INSTALL_DIR="${RASPICAM_DIR:-/opt/raspicam}"
-SERVICE_NAME="raspicam"
+LIB_DIR="/usr/local/lib/raspicam"
+PURGE="$LIB_DIR/purge.sh"
 
 if [ "$(id -u)" -eq 0 ]; then
   SUDO=""
@@ -10,23 +10,26 @@ else
   SUDO="sudo"
 fi
 
-echo "This removes the RaspiCam service and program files from $INSTALL_DIR."
-echo "Recorded video on your storage drive is never touched."
-read -r -p "Continue? [y/N] " reply
+if [ ! -x "$PURGE" ]; then
+  echo "RaspiCam does not look like it was installed with install.sh." >&2
+  exit 1
+fi
+
+echo "This removes RaspiCam completely: the service, the program files, your settings,"
+echo "and the tunnel clients that were installed with it."
+read -r -p "Continue? [y/N] " reply </dev/tty
 case "$reply" in
-  y|Y) ;;
-  *) echo "Cancelled."; exit 0 ;;
+  y | Y) ;;
+  *)
+    echo "Cancelled."
+    exit 0
+    ;;
 esac
 
-$SUDO systemctl disable --now $SERVICE_NAME >/dev/null 2>&1 || true
-$SUDO rm -f /etc/systemd/system/$SERVICE_NAME.service
-$SUDO systemctl daemon-reload
-$SUDO rm -f /usr/local/bin/raspicam
-
-read -r -p "Also delete settings in $INSTALL_DIR/data? [y/N] " purge
-case "$purge" in
-  y|Y) $SUDO rm -rf "$INSTALL_DIR" ;;
-  *) $SUDO find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} + ;;
+read -r -p "Also delete every recording and photo on the storage drive? [y/N] " media </dev/tty
+case "$media" in
+  y | Y) $SUDO "$PURGE" --media ;;
+  *) $SUDO "$PURGE" ;;
 esac
 
-echo "RaspiCam removed."
+echo "RaspiCam is being removed. This takes a few seconds."

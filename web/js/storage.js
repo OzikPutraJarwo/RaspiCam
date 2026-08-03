@@ -14,23 +14,27 @@ function renderSummary() {
   container.innerHTML = "";
   const summary = overview.summary;
   const stats = overview.recordings;
+  container.append(el("div", { class: "section-label", text: "Recording to" }));
   if (!summary.configured || !summary.available) {
     container.append(
-      el("div", { class: "empty", text: "No storage selected yet. Pick a location below to start recording." })
+      el("div", { class: "empty", text: "Nowhere yet. Pick a location below to start recording." })
     );
     return;
   }
-  container.append(el("h2", { text: "Current location" }));
-  container.append(el("div", { class: "title", text: summary.root }));
+  container.append(el("div", { class: "title mono", style: "font-size:13px", text: summary.root }));
   container.append(
-    el("div", { class: "meta", text: `${bytes(summary.used)} used of ${bytes(summary.total)} · ${bytes(summary.free)} free` })
+    el("div", {
+      class: "meta mono",
+      style: "color:var(--dim);font-size:11.5px;margin-top:3px",
+      text: `${bytes(summary.used)} used of ${bytes(summary.total)} · ${bytes(summary.free)} free`,
+    })
   );
   container.append(usageBar(summary.percent));
   container.append(
     el("div", { class: "stat-grid", style: "margin-top:14px" }, [
-      el("div", { class: "stat" }, [el("b", { text: String(stats.count || 0) }), el("span", { text: "Segments" })]),
-      el("div", { class: "stat" }, [el("b", { text: bytes(stats.size) }), el("span", { text: "Recorded" })]),
-      el("div", { class: "stat" }, [el("b", { text: duration(stats.duration) }), el("span", { text: "Footage" })]),
+      el("div", { class: "stat" }, [el("span", { text: "Segments" }), el("b", { text: String(stats.count || 0) })]),
+      el("div", { class: "stat" }, [el("span", { text: "Recorded" }), el("b", { text: bytes(stats.size) })]),
+      el("div", { class: "stat" }, [el("span", { text: "Footage" }), el("b", { text: duration(stats.duration) })]),
     ])
   );
 }
@@ -57,7 +61,7 @@ function renderMounts() {
         mount.selected
           ? el("span", { class: "badge live", text: "In use" })
           : el("button", {
-              class: "btn small primary",
+              class: "btn small",
               text: "Use",
               disabled: !mount.writable,
               onclick: () => selectMount(mount.path),

@@ -5,10 +5,9 @@ import * as settings from "./settings.js";
 import * as storage from "./storage.js";
 import * as tunnel from "./tunnel.js";
 import { api } from "./api.js";
-import { loadCameras, store } from "./store.js";
+import { loadCameras } from "./store.js";
 import { bytes, closeOverlay, closeSheet, fail } from "./ui.js";
 
-let socket = null;
 let currentView = "live";
 
 function showView(name) {
@@ -24,14 +23,9 @@ function showView(name) {
 
 function updateChips(payload) {
   const info = payload.system;
-  document.getElementById("chip-cpu").textContent = `CPU ${Math.round(info.cpu_percent)}%${info.cpu_temp ? ` · ${info.cpu_temp}°C` : ""}`;
+  document.getElementById("chip-cpu").textContent = `cpu ${Math.round(info.cpu_percent)}%${info.cpu_temp ? ` · ${info.cpu_temp}°c` : ""}`;
   const disk = payload.storage;
-  document.getElementById("chip-storage").textContent = disk.available
-    ? `Disk ${bytes(disk.free)} free`
-    : "No storage";
-  const dot = document.getElementById("health-dot");
-  dot.style.background = disk.available ? "var(--ok)" : "var(--warn)";
-  dot.style.boxShadow = `0 0 8px ${disk.available ? "var(--ok)" : "var(--warn)"}`;
+  document.getElementById("chip-storage").textContent = disk.available ? `disk ${bytes(disk.free)} free` : "no storage";
 }
 
 function handleEvent(event) {
@@ -46,7 +40,7 @@ function handleEvent(event) {
     return;
   }
   if (event.type === "tunnel") {
-    tunnel.onStatus(event.status);
+    tunnel.onSessions(event.sessions);
     return;
   }
   if (event.type === "cameras") {
@@ -60,7 +54,7 @@ function handleEvent(event) {
 
 function connect() {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  socket = new WebSocket(`${protocol}://${window.location.host}/api/events`);
+  const socket = new WebSocket(`${protocol}://${window.location.host}/api/events`);
   socket.addEventListener("message", (message) => {
     try {
       handleEvent(JSON.parse(message.data));
@@ -98,14 +92,13 @@ async function bootstrap() {
     const overview = await api.get("/api/system");
     updateChips(overview);
     settings.renderStats(overview);
-    tunnel.onStatus(overview.tunnel);
+    tunnel.updateChip(overview.tunnels);
     if (!overview.ffmpeg) fail(new Error("ffmpeg is not installed on this device"));
   } catch (error) {
     fail(error);
   }
 
   await loadCameras().catch(fail);
-  await tunnel.refresh();
   connect();
 }
 

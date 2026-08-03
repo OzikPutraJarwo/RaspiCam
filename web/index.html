@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0f16">
+<meta name="theme-color" content="#0c0c0e">
 <title>RaspiCam</title>
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/css/app.css">
@@ -11,17 +11,17 @@
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><span id="health-dot"></span>RaspiCam</div>
+    <div class="brand">Raspi<em>Cam</em></div>
     <div class="topbar-meta">
-      <a class="chip link" id="tunnel-chip" href="#" hidden>Tunnel</a>
-      <div class="chip" id="chip-storage">Storage</div>
-      <div class="chip" id="chip-cpu">CPU</div>
+      <a id="tunnel-chip" href="#" target="_blank" rel="noopener" hidden></a>
+      <span id="chip-storage"></span>
+      <span id="chip-cpu"></span>
     </div>
   </header>
 
   <nav class="tabbar" id="tabbar">
     <button data-view="live" class="active">
-      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 11l6-4v10l-6-4z"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="2" y="6" width="14" height="12" rx="1.5"/><path d="M16 11l6-4v10l-6-4z"/></svg>
       Live
     </button>
     <button data-view="recordings">
@@ -29,7 +29,7 @@
       Playback
     </button>
     <button data-view="storage">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg>
       Storage
     </button>
     <button data-view="cameras">
@@ -49,20 +49,20 @@
   <main class="main">
     <section class="view active" id="view-live">
       <div class="view-head">
-        <h1>Live view</h1>
+        <h1>Live</h1>
         <div class="spacer"></div>
         <button class="btn small" id="live-mode">Low bandwidth</button>
-        <button class="btn small" id="live-refresh">Refresh</button>
+        <button class="btn small" id="live-refresh">Reload</button>
       </div>
-      <div class="grid dense" id="live-grid"></div>
-      <div class="empty" id="live-empty" hidden>No cameras yet. Open the Cameras tab to detect and add one.</div>
+      <div class="grid" id="live-grid"></div>
+      <div class="empty" id="live-empty" hidden>No cameras yet. Open Cameras to detect one.</div>
     </section>
 
     <section class="view" id="view-recordings">
       <div class="view-head">
         <h1>Playback</h1>
       </div>
-      <div class="panel">
+      <div class="panel flat">
         <div class="row">
           <div class="field">
             <label for="rec-camera">Camera</label>
@@ -74,23 +74,23 @@
           </div>
         </div>
         <div class="actions">
-          <button class="btn small" id="rec-prev">Previous day</button>
-          <button class="btn small" id="rec-next">Next day</button>
+          <button class="btn small" id="rec-prev">Earlier</button>
+          <button class="btn small" id="rec-next">Later</button>
           <button class="btn small" id="rec-today">Today</button>
           <button class="btn small" id="rec-reload">Reload</button>
         </div>
       </div>
-      <div class="panel">
+      <div class="panel flat">
         <video class="player" id="rec-player" controls playsinline preload="metadata"></video>
         <div class="timeline" id="rec-timeline"></div>
-        <div class="meta" id="rec-position" style="margin-top:8px;color:var(--muted);font-size:12px"></div>
+        <div class="position" id="rec-position"></div>
       </div>
-      <div class="panel">
-        <h2>Segments</h2>
+      <div class="panel flat">
+        <div class="section-label">Segments</div>
         <div class="list" id="rec-list"></div>
       </div>
-      <div class="panel">
-        <h2>Photos</h2>
+      <div class="panel flat">
+        <div class="section-label">Photos</div>
         <div class="gallery" id="rec-gallery"></div>
       </div>
     </section>
@@ -101,13 +101,13 @@
         <div class="spacer"></div>
         <button class="btn small" id="storage-scan">Rescan</button>
       </div>
-      <div class="panel" id="storage-summary"></div>
-      <div class="panel">
-        <h2>Available locations</h2>
+      <div class="panel flat" id="storage-summary"></div>
+      <div class="panel flat">
+        <div class="section-label">Available locations</div>
         <div class="list" id="storage-mounts"></div>
       </div>
-      <div class="panel">
-        <h2>Recording rules</h2>
+      <div class="panel flat">
+        <div class="section-label">Recording rules</div>
         <div class="row">
           <div class="field">
             <label for="storage-segment">Segment length (minutes)</label>
@@ -133,12 +133,12 @@
         <button class="btn small" id="cam-detect">Detect</button>
         <button class="btn small" id="cam-add-network">Add network camera</button>
       </div>
-      <div class="panel">
-        <h2>Detected and available</h2>
+      <div class="panel flat">
+        <div class="section-label">Detected</div>
         <div class="list" id="cam-sources"></div>
       </div>
-      <div class="panel">
-        <h2>Configured</h2>
+      <div class="panel flat">
+        <div class="section-label">In use</div>
         <div class="list" id="cam-list"></div>
       </div>
     </section>
@@ -146,18 +146,15 @@
     <section class="view" id="view-tunnel">
       <div class="view-head">
         <h1>Remote access</h1>
+        <span class="lede">No account needed. Several can run at once.</span>
+        <div class="spacer"></div>
+        <button class="btn small danger" id="tunnel-stop-all">Stop all</button>
       </div>
-      <div class="panel" id="tunnel-status"></div>
-      <div class="panel">
-        <h2>Providers</h2>
+      <div class="panel flat">
         <div class="list" id="tunnel-providers"></div>
-        <label class="switch" style="margin-top:12px">
-          <input type="checkbox" id="tunnel-autostart">
-          Start the selected tunnel automatically on boot
-        </label>
       </div>
-      <div class="panel">
-        <h2>Log</h2>
+      <div class="panel flat">
+        <div class="section-label">Activity</div>
         <div class="log" id="tunnel-log"></div>
       </div>
     </section>
@@ -166,27 +163,30 @@
       <div class="view-head">
         <h1>Settings</h1>
       </div>
-      <div class="panel">
-        <h2>System</h2>
+      <div class="panel flat">
+        <div class="section-label">System</div>
         <div class="stat-grid" id="settings-stats"></div>
       </div>
-      <div class="panel">
-        <h2>Change password</h2>
-        <div class="field">
-          <label for="pw-current">Current password</label>
-          <input id="pw-current" type="password" autocomplete="current-password">
+      <div class="panel flat">
+        <div class="section-label">Password</div>
+        <div class="row">
+          <div class="field">
+            <label for="pw-current">Current</label>
+            <input id="pw-current" type="password" autocomplete="current-password">
+          </div>
+          <div class="field">
+            <label for="pw-new">New</label>
+            <input id="pw-new" type="password" autocomplete="new-password">
+          </div>
         </div>
-        <div class="field">
-          <label for="pw-new">New password</label>
-          <input id="pw-new" type="password" autocomplete="new-password">
-        </div>
-        <button class="btn primary" id="pw-save">Update password</button>
+        <button class="btn" id="pw-save">Update password</button>
       </div>
-      <div class="panel">
-        <h2>Service</h2>
+      <div class="panel flat">
+        <div class="section-label">Service</div>
         <div class="actions">
-          <button class="btn" id="settings-restart">Restart RaspiCam</button>
-          <button class="btn danger" id="settings-logout">Sign out</button>
+          <button class="btn" id="settings-restart">Restart</button>
+          <button class="btn" id="settings-logout">Sign out</button>
+          <button class="btn danger" id="settings-uninstall">Uninstall RaspiCam</button>
         </div>
       </div>
     </section>

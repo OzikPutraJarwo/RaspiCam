@@ -16,8 +16,9 @@ Everything runs on the Pi itself. No cloud service, no subscription, no account.
 - **Photos and recordings** — snapshot on demand, record by hand, or record continuously like a normal CCTV system.
 - **Timeline playback** — pick a camera and a day, drag along the timeline, and play back from any moment.
 - **Automatic cleanup** — the oldest footage is deleted when the drive gets close to full, so recording never stops.
-- **Remote access** — one click starts a tunnel through Cloudflare, Serveo, Pinggy, LocalTunnel or bore.pub. A QR code makes it easy to open on a phone.
+- **Remote access** — one click starts a tunnel through Cloudflare, LocalTunnel, bore.pub, Pinggy or Serveo. Run several at the same time, and open any of them from a QR code.
 - **Password protected** — you set a password the first time you open the dashboard.
+- **Clean removal** — an uninstall button inside the app takes everything back off the device.
 
 ## Requirements
 
@@ -33,7 +34,7 @@ Run this on the Pi:
 curl -fsSL https://raw.githubusercontent.com/OzikPutraJarwo/RaspiCam/main/install.sh | bash
 ```
 
-That is the whole installation. It installs the packages RaspiCam needs, sets itself up in `/opt/raspicam`, and starts automatically on every boot.
+That is the whole installation. It installs everything RaspiCam needs — ffmpeg, Python, Node.js and the tunnel clients (cloudflared, localtunnel, bore) — sets itself up in `/opt/raspicam`, and starts automatically on every boot.
 
 When it finishes it prints the address to open, for example:
 
@@ -75,19 +76,23 @@ Everything is stored in a plain folder tree, so you can also copy it off with a 
 
 ## Remote access
 
-The Tunnel tab exposes the dashboard on a public address without any signup. Pick a provider, press Start, and share or scan the link that appears.
+The Tunnel tab puts the dashboard on a public address without any signup. Press Start next to a provider and share or scan the link that appears. You can run several providers at once, which is useful when one of them is having a bad day.
 
 | Provider | Notes |
 | --- | --- |
-| Cloudflare Quick Tunnel | HTTPS, fast and reliable. Installed for you by the installer. |
-| Serveo | HTTPS over plain SSH, nothing to install. |
-| Pinggy | HTTPS over plain SSH. Free sessions end after 60 minutes and reconnect with a new address. |
-| LocalTunnel | Needs Node.js. Visitors see a warning page first and must enter your Pi public IP. |
-| bore.pub | Plain HTTP on a random port. Needs the `bore` client installed. |
+| Cloudflare | HTTPS, fast and by far the most reliable. Try this one first. |
+| LocalTunnel | HTTPS. Visitors see a warning page and must type your public IP once. |
+| bore.pub | Plain HTTP on a random port, so no encryption. Keep those sessions short. |
+| Pinggy | HTTPS over SSH. Free sessions end after 60 minutes and return on a new address. |
+| Serveo | HTTPS over SSH. Community run and frequently offline. |
 
-Addresses from these free services change every time the tunnel restarts. Turn on *Start the selected tunnel automatically on boot* if you want it back up after a power cut, then open the dashboard locally to read the new link.
+All five are installed for you, apart from Pinggy and Serveo which only need the SSH client that Raspberry Pi OS already has.
 
-Anyone with the link still needs your password, but treat these links as temporary and stop the tunnel when you are done.
+Tick **auto** next to a provider to bring its tunnel back up on every boot. Addresses from these free services change each time, so open the dashboard locally to read the new link.
+
+**If a tunnel says "connect ... port 22: Connection timed out"** your network blocks outgoing SSH. That kills Serveo and Pinggy but not Cloudflare, which works over ordinary HTTPS.
+
+Anyone with the link still needs your password, but treat these addresses as temporary and stop the tunnel when you are done.
 
 ## Managing the service
 
@@ -101,6 +106,14 @@ raspicam uninstall   # remove RaspiCam
 ```
 
 Settings live in `/opt/raspicam/data/config.json` and the recording index in `/opt/raspicam/data/raspicam.db`. Neither contains your video, only where to find it.
+
+## Uninstalling
+
+**Settings → Uninstall RaspiCam** removes the service, the program files, your settings and the tunnel clients that came with it, then closes the dashboard. Tick the box in that dialog if you also want every recording and photo deleted from the storage drive.
+
+`sudo raspicam uninstall` does exactly the same thing from a terminal.
+
+System packages such as ffmpeg, Python and Node.js are deliberately left in place, since other software on the device may be using them.
 
 ## Troubleshooting
 

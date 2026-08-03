@@ -111,6 +111,19 @@ def usage(path):
     return {"total": stat.total, "used": stat.used, "free": stat.free, "percent": stat.percent}
 
 
+def _owning_mount(root, paths):
+    if not root:
+        return None
+    root = os.path.abspath(root)
+    best = None
+    for path in paths:
+        candidate = os.path.abspath(path)
+        if root == candidate or root.startswith(candidate.rstrip("/") + "/"):
+            if best is None or len(candidate) > len(best):
+                best = candidate
+    return best
+
+
 def list_mounts():
     entries = _lsblk_mounts() or _psutil_mounts()
     selected = config.section("storage").get("root")
@@ -125,9 +138,11 @@ def list_mounts():
         seen.add(path)
         entry.update(usage(path))
         entry["writable"] = os.access(path, os.W_OK)
-        entry["selected"] = bool(selected) and os.path.abspath(selected) == os.path.abspath(path)
         entry["has_data"] = (Path(path) / APP_FOLDER).exists()
         mounts.append(entry)
+    owner = _owning_mount(selected, [entry["path"] for entry in mounts])
+    for entry in mounts:
+        entry["selected"] = owner is not None and os.path.abspath(entry["path"]) == owner
     mounts.sort(key=lambda item: (item["kind"] != "usb", item["path"]))
     return mounts
 

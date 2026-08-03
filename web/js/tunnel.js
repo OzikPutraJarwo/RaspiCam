@@ -1,160 +1,176 @@
 import { api } from "./api.js";
-import { el, fail, toast } from "./ui.js";
+import { closeOverlay, el, fail, openOverlay, toast } from "./ui.js";
 
 let data = null;
-let selected = null;
 
-function providerLabel(id) {
-  const match = data.providers.find((provider) => provider.id === id);
-  return match ? match.label : id;
+const STATE_CLASS = { online: "live", starting: "warn", reconnecting: "warn", error: "error" };
+
+function autostartList() {
+  return (data.settings && data.settings.autostart) || [];
 }
 
-function renderStatus() {
-  const container = document.getElementById("tunnel-status");
-  container.innerHTML = "";
-  const status = data.status;
-  const badgeClass = status.state === "online" ? "live" : status.state === "stopped" ? "" : "warn";
-  container.append(
-    el("div", { class: "item", style: "background:transparent;border:0;padding:0" }, [
-      el("div", { class: "grow" }, [
-        el("div", { class: "title", text: status.provider ? providerLabel(status.provider) : "No tunnel running" }),
-        el("div", { class: "meta", text: status.error || `Dashboard port ${data.port}` }),
-      ]),
-      el("span", { class: `badge ${badgeClass}`.trim(), text: status.state }),
-    ])
-  );
-  if (status.url) {
-    container.append(
-      el("div", { class: "field", style: "margin-top:12px" }, [
-        el("label", { text: "Public address" }),
-        el("div", { class: "actions" }, [
-          el("a", { class: "btn", text: status.url, href: status.url, target: "_blank", rel: "noopener" }),
-          el("button", {
-            class: "btn small",
-            text: "Copy",
-            onclick: async () => {
-              try {
-                await navigator.clipboard.writeText(status.url);
-                toast("Link copied", "ok");
-              } catch (error) {
-                toast(status.url);
-              }
-            },
-          }),
-        ]),
-      ])
-    );
-    if (data.qr) {
-      container.append(el("img", { src: data.qr, alt: "QR code", style: "margin-top:12px;width:170px;border-radius:10px" }));
-    }
-  }
-  container.append(
-    el("div", { class: "actions", style: "margin-top:12px" }, [
-      el("button", {
-        class: "btn primary",
-        text: status.state === "stopped" ? "Start tunnel" : "Restart tunnel",
-        disabled: !selected || !data.providers.some((provider) => provider.id === selected && provider.available),
-        onclick: start,
-      }),
-      el("button", { class: "btn danger", text: "Stop", disabled: status.state === "stopped", onclick: stop }),
-    ])
-  );
-}
-
-function renderProviders() {
-  const container = document.getElementById("tunnel-providers");
-  container.innerHTML = "";
-  data.providers.forEach((provider) => {
-    container.append(
-      el("div", { class: `item${selected === provider.id ? " selected" : ""}` }, [
-        el("div", { class: "grow" }, [
-          el("div", { class: "title", text: provider.label }),
-          el("div", { class: "meta", text: provider.available ? provider.hint : `${provider.requires} is not installed. ${provider.hint}` }),
-        ]),
-        provider.available
-          ? el("button", {
-              class: `btn small${selected === provider.id ? " active" : ""}`,
-              text: selected === provider.id ? "Selected" : "Select",
-              onclick: () => {
-                selected = provider.id;
-                renderProviders();
-                renderStatus();
-              },
-            })
-          : el("span", { class: "badge", text: "Unavailable" }),
-      ])
-    );
-  });
-}
-
-function renderLog() {
-  const container = document.getElementById("tunnel-log");
-  container.textContent = (data.status.log || []).join("\n") || "No output yet.";
-  container.scrollTop = container.scrollHeight;
-}
-
-async function start() {
-  if (!selected) return;
+async function saveAutostart(provider, enabled) {
+  const current = new Set(autostartList());
+  if (enabled) current.add(provider);
+  else current.delete(provider);
   try {
-    await api.post("/api/tunnel/start", { provider: selected });
-    toast("Tunnel starting", "ok");
-    setTimeout(refresh, 1200);
+    data.settings = await api.patch("/api/tunnel/settings", { autostart: [...current] });
   } catch (error) {
     fail(error);
   }
 }
 
-async function stop() {
+function urlRow(provider) {
+  const url = provider.status.url;
+  const link = el("a", {
+    class: "mono url",
+    text: url,
+    href: url,
+    target: "_blank",
+    rel: "noopener",
+  });
+  const buttons = el("div", { class: "actions" }, [
+    el("button", {
+      class: "btn small",
+      text: "Copy",
+      onclick: async () => {
+        try {
+          await navigator.clipboard.writeText(url);
+          toast("Link copied", "ok");
+        } catch (error) {
+          toast(url);
+        }
+      },
+    }),
+    provider.qr
+      ? el("button", {
+          class: "btn small",
+          text: "QR",
+          onclick: () =>
+            openOverlay(url, provider.qr, [el("button", { class: "btn", text: "Close", onclick: closeOverlay })]),
+        })
+      : null,
+  ]);
+  return el("div", { style: "width:100%" }, [link, buttons]);
+}
+
+function renderProviders() {
+  const container = document.getElementById("tunnel-providers");
+  container.innerHTML = "";
+  const autostart = autostartList();
+  data.providers.forEach((provider) => {
+    const status = provider.status;
+    const running = Boolean(status) && status.state !== "stopped";
+    const detail = status && status.error ? status.error : provider.hint;
+    const head = el("div", { class: "grow" }, [
+      el("div", { class: "title", text: provider.label }),
+      el("div", { class: "meta prose", text: provider.available ? detail : `${provider.requires} is not installed` }),
+    ]);
+    const controls = [];
+    if (status && status.state !== "stopped") {
+      controls.push(el("span", { class: `badge ${STATE_CLASS[status.state] || ""}`.trim(), text: status.state }));
+    }
+    controls.push(
+      el("label", { class: "switch", title: "Start automatically on boot" }, [
+        el("input", {
+          type: "checkbox",
+          checked: autostart.includes(provider.id),
+          disabled: !provider.available,
+          onchange: (event) => saveAutostart(provider.id, event.target.checked),
+        }),
+        "auto",
+      ])
+    );
+    controls.push(
+      el("button", {
+        class: `btn small${running ? " danger" : ""}`,
+        text: running ? "Stop" : "Start",
+        disabled: !provider.available,
+        onclick: () => (running ? stop(provider.id) : start(provider.id)),
+      })
+    );
+    const rows = [head, ...controls];
+    if (status && status.url) rows.push(urlRow(provider));
+    container.append(el("div", { class: `item${status && status.url ? " selected" : ""}` }, rows));
+  });
+}
+
+function renderLog() {
+  const container = document.getElementById("tunnel-log");
+  const lines = [];
+  data.providers.forEach((provider) => {
+    if (!provider.status) return;
+    provider.status.log.forEach((line) => lines.push(`[${provider.id}] ${line}`));
+  });
+  container.textContent = lines.slice(-40).join("\n") || "Nothing yet.";
+  container.scrollTop = container.scrollHeight;
+}
+
+async function start(provider) {
   try {
-    await api.post("/api/tunnel/stop");
-    toast("Tunnel stopped", "ok");
+    await api.post("/api/tunnel/start", { provider });
+    toast("Starting tunnel", "ok");
+    setTimeout(refresh, 1500);
+  } catch (error) {
+    fail(error);
+  }
+}
+
+async function stop(provider) {
+  try {
+    await api.post("/api/tunnel/stop", { provider });
     await refresh();
   } catch (error) {
     fail(error);
   }
 }
 
-export function onStatus(status) {
-  if (!data) return;
-  data.status = status;
-  renderStatus();
-  renderLog();
-  updateChip(status);
+export function updateChip(sessions) {
+  const chip = document.getElementById("tunnel-chip");
+  const online = Object.values(sessions || {}).filter((session) => session.url);
+  if (!online.length) {
+    chip.hidden = true;
+    return;
+  }
+  chip.hidden = false;
+  chip.href = online[0].url;
+  const label = online[0].url.replace(/^https?:\/\//, "");
+  chip.textContent = online.length > 1 ? `${label} +${online.length - 1}` : label;
 }
 
-function updateChip(status) {
-  const chip = document.getElementById("tunnel-chip");
-  if (status && status.url) {
-    chip.hidden = false;
-    chip.textContent = status.url.replace(/^https?:\/\//, "");
-    chip.href = status.url;
-    chip.target = "_blank";
-  } else {
-    chip.hidden = true;
+export function onSessions(sessions) {
+  updateChip(sessions);
+  if (!data) return;
+  data.providers.forEach((provider) => {
+    provider.status = sessions[provider.id] || null;
+    if (!provider.status || !provider.status.url) provider.qr = null;
+  });
+  const missingQr = data.providers.some((provider) => provider.status && provider.status.url && !provider.qr);
+  if (missingQr) {
+    refresh();
+    return;
   }
+  renderProviders();
+  renderLog();
 }
 
 export async function refresh() {
   try {
     data = await api.get("/api/tunnel");
-    const usable = data.providers.filter((provider) => provider.available).map((provider) => provider.id);
-    const preferred = [selected, data.status.provider, data.settings && data.settings.provider].find((id) => usable.includes(id));
-    selected = preferred || usable[0] || null;
-    document.getElementById("tunnel-autostart").checked = Boolean(data.settings && data.settings.autostart);
     renderProviders();
-    renderStatus();
     renderLog();
-    updateChip(data.status);
+    updateChip(Object.fromEntries(data.providers.filter((p) => p.status).map((p) => [p.id, p.status])));
   } catch (error) {
     fail(error);
   }
 }
 
 export function init() {
-  document.getElementById("tunnel-autostart").addEventListener("change", async (event) => {
+  document.getElementById("tunnel-stop-all").addEventListener("click", async () => {
     try {
-      await api.patch("/api/tunnel/settings", { autostart: event.target.checked, provider: selected || undefined });
-      toast("Preference saved", "ok");
+      await api.post("/api/tunnel/stop", {});
+      toast("All tunnels stopped", "ok");
+      await refresh();
     } catch (error) {
       fail(error);
     }

@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
         "retention_percent": 85,
         "min_free_gb": 2.0,
     },
-    "tunnel": {"provider": "cloudflared", "autostart": False},
+    "tunnel": {"autostart": []},
     "cameras": [],
 }
 
@@ -71,6 +71,11 @@ class ConfigStore:
                 data["auth"]["secret"] = secrets.token_hex(32)
                 changed = True
             data["cameras"] = [self._normalize_camera(c) for c in data.get("cameras", [])]
+            autostart = data["tunnel"].get("autostart")
+            if not isinstance(autostart, list):
+                provider = data["tunnel"].get("provider")
+                data["tunnel"] = {"autostart": [provider] if autostart and provider else []}
+                changed = True
             self._data = data
             if changed:
                 self._write()

@@ -35,22 +35,7 @@ case "${1:-}" in
     PORT="$(python3 -c "import json;print(json.load(open('$INSTALL_DIR/data/config.json'))['server']['port'])" 2>/dev/null || echo 8080)"
     echo "http://$(hostname -I | awk '{print $1}'):$PORT"
     ;;
-  update)
-    OWNER="$(stat -c '%U' "$INSTALL_DIR")"
-    run_as() {
-      if [ "$(id -un)" = "$OWNER" ]; then
-        "$@"
-      elif [ "$(id -u)" -eq 0 ] && command -v runuser >/dev/null 2>&1; then
-        runuser -u "$OWNER" -- "$@"
-      else
-        sudo -u "$OWNER" "$@"
-      fi
-    }
-    run_as git -C "$INSTALL_DIR" pull --ff-only
-    run_as "$INSTALL_DIR/.venv/bin/pip" install --quiet -r "$INSTALL_DIR/requirements.txt"
-    $SUDO systemctl restart $SERVICE_NAME
-    echo "RaspiCam updated."
-    ;;
+  update) RASPICAM_DIR="$INSTALL_DIR" bash "$INSTALL_DIR/install.sh" ;;
   uninstall) bash "$INSTALL_DIR/uninstall.sh" ;;
   *) usage ;;
 esac
