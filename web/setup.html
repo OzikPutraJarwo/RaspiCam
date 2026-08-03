@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f16">
+<title>RaspiCam Setup</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<div class="auth">
+  <form class="auth-card" id="form" data-mode="setup">
+    <h1>Welcome to RaspiCam</h1>
+    <p>Create a password to protect this dashboard. You will need it every time you open RaspiCam, including through a tunnel.</p>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="new-password" minlength="6" required>
+    </div>
+    <div class="field">
+      <label for="confirm">Confirm password</label>
+      <input id="confirm" type="password" autocomplete="new-password" minlength="6" required>
+    </div>
+    <button class="btn primary" type="submit">Create password</button>
+    <div class="error-text" id="error"></div>
+  </form>
+</div>
+<script type="module" src="/static/js/auth.js"></script>
+</body>
+</html>
