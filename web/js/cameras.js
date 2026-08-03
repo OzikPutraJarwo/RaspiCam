@@ -297,7 +297,7 @@ function openNetworkSheet() {
       }
     },
   });
-  body.append(button);
+  body.append(el("div", { class: "actions" }, [button]));
   openSheet("Add network camera", body);
 }
 

@@ -16,7 +16,7 @@ Everything runs on the Pi itself. No cloud service, no subscription, no account.
 - **Photos and recordings** — snapshot on demand, record by hand, or record continuously like a normal CCTV system.
 - **Timeline playback** — pick a camera and a day, drag along the timeline, and play back from any moment.
 - **Automatic cleanup** — the oldest footage is deleted when the drive gets close to full, so recording never stops.
-- **Remote access** — one click starts a tunnel through Cloudflare, LocalTunnel, bore.pub, Pinggy or Serveo. Run several at the same time, and open any of them from a QR code.
+- **Remote access** — one click starts a tunnel through Cloudflare, LocalTunnel, bore.pub or Serveo. Run several at the same time, and open any of them from a QR code.
 - **Password protected** — you set a password the first time you open the dashboard.
 - **Clean removal** — an uninstall button inside the app takes everything back off the device.
 
@@ -49,7 +49,7 @@ To use a different port, run `RASPICAM_PORT=9000 bash -c "$(curl -fsSL https://r
 ## First steps
 
 1. **Set a password.** This is the only account, and it protects the dashboard everywhere including through a tunnel.
-2. **Open the Storage tab and choose where to save.** Nothing is recorded until you pick a location. A USB drive is strongly recommended so you are not wearing out the microSD card.
+2. **Open the Storage tab and choose where to save.** Nothing is recorded until you pick a location. Any mounted drive works, including the card the system runs from, and you can also type the path to a folder yourself. A separate USB drive is still the better choice so you are not wearing out the microSD card.
 3. **Open the Cameras tab and press Detect.** Attached cameras show up in the list, press Add on the ones you want, and Start to switch them on. Network cameras are added with the *Add network camera* button by pasting an RTSP or HTTP address.
 4. **Go to Live.** Tap a camera for a bigger view, take a photo, or start recording.
 
@@ -83,14 +83,13 @@ The Tunnel tab puts the dashboard on a public address without any signup. Press 
 | Cloudflare | HTTPS, fast and by far the most reliable. Try this one first. |
 | LocalTunnel | HTTPS. Visitors see a warning page and must type your public IP once. |
 | bore.pub | Plain HTTP on a random port, so no encryption. Keep those sessions short. |
-| Pinggy | HTTPS over SSH. Free sessions end after 60 minutes and return on a new address. |
 | Serveo | HTTPS over SSH. Community run and frequently offline. |
 
-All five are installed for you, apart from Pinggy and Serveo which only need the SSH client that Raspberry Pi OS already has.
+The first three are installed for you. Serveo only needs the SSH client that Raspberry Pi OS already has.
 
 Tick **auto** next to a provider to bring its tunnel back up on every boot. Addresses from these free services change each time, so open the dashboard locally to read the new link.
 
-**If a tunnel says "connect ... port 22: Connection timed out"** your network blocks outgoing SSH. That kills Serveo and Pinggy but not Cloudflare, which works over ordinary HTTPS.
+**If a tunnel says "connect ... port 22: Connection timed out"** your network blocks outgoing SSH. That kills Serveo but not Cloudflare, which works over ordinary HTTPS.
 
 Anyone with the link still needs your password, but treat these addresses as temporary and stop the tunnel when you are done.
 
@@ -127,7 +126,9 @@ System packages such as ffmpeg, Python and Node.js are deliberately left in plac
 
 **Playback shows nothing for today.** Segments only appear once they are finished. Wait for the current segment to close, or press Rescan in the Storage tab.
 
-**A USB drive is not listed.** RaspiCam only lists drives that are mounted. Plug it in with a desktop session running, or mount it yourself and press Rescan.
+**A USB drive is not listed.** RaspiCam only lists drives that are mounted. Plug it in with a desktop session running, or mount it yourself and press Rescan. You can also type the path into the box under the list.
+
+**Picking a drive saves to a different folder than expected.** Some mount points, `/` in particular, are owned by root and RaspiCam does not run as root. When that happens it falls back to a writable folder on the same drive, usually your home directory, and the list shows exactly where each choice will write.
 
 ## License
 

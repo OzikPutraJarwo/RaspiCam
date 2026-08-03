@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0c0c0e">
+<meta name="theme-color" content="#f7f7f5">
 <title>RaspiCam</title>
 <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/static/css/app.css">
@@ -105,6 +105,13 @@
       <div class="panel flat">
         <div class="section-label">Available locations</div>
         <div class="list" id="storage-mounts"></div>
+        <div class="field" style="margin-top:16px">
+          <label for="storage-path">Or type any folder</label>
+          <div class="actions">
+            <input id="storage-path" type="text" placeholder="/media/usb-drive" style="flex:1;min-width:180px">
+            <button class="btn" id="storage-use-path">Use folder</button>
+          </div>
+        </div>
       </div>
       <div class="panel flat">
         <div class="section-label">Recording rules</div>
@@ -208,7 +215,7 @@
       <h3 id="sheet-title"></h3>
       <button class="btn small" id="sheet-close">Close</button>
     </div>
-    <div id="sheet-body"></div>
+    <div class="sheet-body" id="sheet-body"></div>
   </div>
 </div>
 

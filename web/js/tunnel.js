@@ -61,10 +61,10 @@ function renderProviders() {
   data.providers.forEach((provider) => {
     const status = provider.status;
     const running = Boolean(status) && status.state !== "stopped";
-    const detail = status && status.error ? status.error : provider.hint;
+    const detail = provider.available ? status && status.error : `${provider.requires} is not installed`;
     const head = el("div", { class: "grow" }, [
       el("div", { class: "title", text: provider.label }),
-      el("div", { class: "meta prose", text: provider.available ? detail : `${provider.requires} is not installed` }),
+      detail ? el("div", { class: "meta prose", text: detail }) : null,
     ]);
     const controls = [];
     if (status && status.state !== "stopped") {

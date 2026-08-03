@@ -48,14 +48,17 @@ function renderMounts() {
   }
   overview.mounts.forEach((mount) => {
     const label = mount.label || mount.model || mount.name || mount.path;
+    const detail = [
+      mount.kind.toUpperCase(),
+      mount.fstype || "unknown",
+      `${bytes(mount.free)} free of ${bytes(mount.total)}`,
+    ];
+    if (mount.writable && mount.target) detail.push(`→ ${mount.target}`);
     container.append(
       el("div", { class: `item${mount.selected ? " selected" : ""}` }, [
         el("div", { class: "grow" }, [
           el("div", { class: "title", text: `${label} · ${mount.path}` }),
-          el("div", {
-            class: "meta",
-            text: `${mount.kind.toUpperCase()} · ${mount.fstype || "unknown"} · ${bytes(mount.free)} free of ${bytes(mount.total)}`,
-          }),
+          el("div", { class: "meta", text: detail.join(" · ") }),
           usageBar(mount.percent),
         ]),
         mount.selected
@@ -101,6 +104,16 @@ export async function refresh() {
 }
 
 export function init() {
+  document.getElementById("storage-use-path").addEventListener("click", async () => {
+    const field = document.getElementById("storage-path");
+    const path = field.value.trim();
+    if (!path) {
+      toast("Type a folder first", "error");
+      return;
+    }
+    await selectMount(path);
+    field.value = "";
+  });
   document.getElementById("storage-scan").addEventListener("click", async () => {
     try {
       const result = await api.post("/api/storage/scan");

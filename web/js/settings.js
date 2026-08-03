@@ -17,7 +17,6 @@ export function renderStats(payload) {
     ["Memory", `${bytes(info.memory_used)} / ${bytes(info.memory_total)}`],
     ["Uptime", duration(info.uptime)],
     ["Encoder", payload.encoder],
-    ["Version", info.version],
   ];
   entries.forEach(([label, value]) => {
     container.append(el("div", { class: "stat" }, [el("span", { text: label }), el("b", { text: String(value) })]));

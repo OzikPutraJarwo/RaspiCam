@@ -31,32 +31,22 @@ PROVIDERS = {
         "label": "Cloudflare",
         "binaries": ["cloudflared"],
         "pattern": r"https://[-a-z0-9]+\.trycloudflare\.com",
-        "hint": "HTTPS, no account, the most reliable option.",
     },
     "localtunnel": {
         "label": "LocalTunnel",
         "binaries": ["lt", "npx"],
         "pattern": r"https://[-a-z0-9.]+\.loca\.lt",
-        "hint": "HTTPS. Visitors must enter this device public IP on the warning page first.",
     },
     "bore": {
         "label": "bore.pub",
         "binaries": ["bore"],
         "pattern": r"bore\.pub:(\d+)",
         "template": "http://bore.pub:{}",
-        "hint": "Plain HTTP on a random port. No encryption, keep sessions short.",
-    },
-    "pinggy": {
-        "label": "Pinggy",
-        "binaries": ["ssh"],
-        "pattern": r"https://[-a-z0-9.]+\.pinggy\.(?:link|online|io)",
-        "hint": "HTTPS over SSH. Free sessions drop after 60 minutes and come back on a new address.",
     },
     "serveo": {
         "label": "Serveo",
         "binaries": ["ssh"],
         "pattern": r"https://[-a-z0-9.]+\.serveo\.net",
-        "hint": "HTTPS over SSH. Community run and often offline, try another provider if it times out.",
     },
 }
 
@@ -77,8 +67,6 @@ def command_for(provider, port):
         return [path, "tunnel", "--no-autoupdate", "--url", "http://localhost:{}".format(port)]
     if provider == "serveo":
         return [path] + SSH_OPTIONS + ["-R", "80:localhost:{}".format(port), "serveo.net"]
-    if provider == "pinggy":
-        return [path, "-p", "443"] + SSH_OPTIONS + ["-R0:localhost:{}".format(port), "a.pinggy.io"]
     if provider == "localtunnel":
         if name == "lt":
             return [path, "--port", str(port)]
@@ -230,7 +218,6 @@ class TunnelManager:
                 {
                     "id": key,
                     "label": meta["label"],
-                    "hint": meta["hint"],
                     "available": bool(path),
                     "requires": meta["binaries"][0],
                     "status": session.status() if session else None,

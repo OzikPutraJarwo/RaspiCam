@@ -6,7 +6,7 @@ from pathlib import Path
 
 import psutil
 
-from .config import config
+from .config import BASE_DIR, config
 
 APP_FOLDER = "RaspiCam"
 IGNORED_FILESYSTEMS = {
@@ -111,6 +111,31 @@ def usage(path):
     return {"total": stat.total, "used": stat.used, "free": stat.free, "percent": stat.percent}
 
 
+def _same_device(first, second):
+    try:
+        return os.stat(first).st_dev == os.stat(second).st_dev
+    except OSError:
+        return False
+
+
+def resolve_root(path):
+    try:
+        target = Path(path).expanduser()
+    except (TypeError, ValueError):
+        return None
+    if not target.is_dir():
+        return None
+    if os.access(target, os.W_OK):
+        return target
+    for fallback in (Path.home(), BASE_DIR):
+        try:
+            if fallback.is_dir() and os.access(fallback, os.W_OK) and _same_device(fallback, target):
+                return fallback
+        except OSError:
+            continue
+    return None
+
+
 def _owning_mount(root, paths):
     if not root:
         return None
@@ -137,8 +162,10 @@ def list_mounts():
             continue
         seen.add(path)
         entry.update(usage(path))
-        entry["writable"] = os.access(path, os.W_OK)
-        entry["has_data"] = (Path(path) / APP_FOLDER).exists()
+        resolved = resolve_root(path)
+        entry["writable"] = resolved is not None
+        entry["target"] = str(resolved / APP_FOLDER) if resolved else None
+        entry["has_data"] = bool(resolved) and (resolved / APP_FOLDER).exists()
         mounts.append(entry)
     owner = _owning_mount(selected, [entry["path"] for entry in mounts])
     for entry in mounts:
@@ -163,11 +190,12 @@ def is_available():
 
 
 def select_root(path):
-    target = Path(path).expanduser().resolve()
-    if not target.is_dir():
-        raise ValueError("Path does not exist")
-    if not os.access(target, os.W_OK):
-        raise ValueError("Path is not writable")
+    if not Path(path).expanduser().is_dir():
+        raise ValueError("That folder does not exist")
+    resolved = resolve_root(path)
+    if resolved is None:
+        raise ValueError("Nothing on that drive is writable by RaspiCam")
+    target = resolved.resolve()
     base = target / APP_FOLDER
     base.mkdir(parents=True, exist_ok=True)
     probe = base / ".raspicam_write_test"
